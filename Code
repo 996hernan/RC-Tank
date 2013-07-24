@@ -1,0 +1,90 @@
+// Glue together PS2X controller code with DFRobot Motor Shield code
+//
+#include <PS2X_lib.h>  //for v1.6
+ 
+PS2X ps2x; // create PS2 Controller Class
+ 
+
+int error = 0;
+byte type = 0;
+byte vibrate = 0;
+ 
+
+//Arduino PWM Speed Control for DRV Motor Shield
+ 
+int BIN1 = 5;
+int BIN2 = 6;
+int AIN2 = 9;
+int AIN1 = 3;
+
+int BIN2val = 0;
+
+ 
+void setup()
+{
+    Serial.begin (19200) ;
+    pinMode(BIN1, OUTPUT);
+    pinMode(BIN2, OUTPUT);
+    pinMode(AIN2, OUTPUT);
+    pinMode(AIN1, OUTPUT);
+
+ 
+
+ error = ps2x.config_gamepad(13,11,10,12, true, true);   //setup pins and settings:  GamePad(clock, command, attention, data, Pressures?, Rumble?) check for error} 
+
+ if(error == 0) {
+   Serial.println("Found Controller, configured successful");
+   Serial.println("Try out all the buttons, X will vibrate the controller, faster as you press harder;");
+   Serial.println("holding L1 or R1 will print out the analog stick values.");
+   Serial.println("Go to www.billporter.info for updates and to report bugs.");
+ }
+   
+ else if(error == 1)
+   Serial.println("No controller found, check wiring, see readme.txt to enable debug. visit www.billporter.info for troubleshooting tips");
+   
+ else if(error == 2)
+   Serial.println("Controller found but not accepting commands. see readme.txt to enable debug. Visit www.billporter.info for troubleshooting tips");
+   
+ else if(error == 3)
+   Serial.println("Controller refusing to enter Pressures mode, may not support it. ");
+       
+   type = ps2x.readType(); 
+}
+         
+void loop()
+{
+       
+ if(error == 1) //skip loop if no controller found
+  return; 
+  
+ if(type == 1){ //RC Tank
+   
+   ps2x.read_gamepad(false, vibrate);          //read controller 
+   
+   
+ if (ps2x.Analog(PSS_LY)==127) // go forward for motor A
+   analogWrite(AIN1, 0);
+else if (ps2x.Analog(PSS_LY) < 127)
+   analogWrite(AIN1, (127- ps2x.Analog(PSS_LY)) * 2);
+
+ if (ps2x.Analog(PSS_LY)==127) // go reverse for motor A
+   analogWrite(AIN2, 0);
+else if (ps2x.Analog(PSS_LY) > 127)
+   analogWrite(AIN2, (ps2x.Analog(PSS_LY)-128) * 2);
+
+ if (ps2x.Analog (PSS_RY)==127) // go forward for motor B
+   analogWrite(BIN1, 0);
+else if (ps2x.Analog(PSS_RY) < 127)
+   analogWrite(BIN1, (127- ps2x.Analog(PSS_RY)) * 2);
+
+ if (ps2x.Analog(PSS_RY)==127) // go reverse for motor B
+   analogWrite(BIN2, 0);
+else if (ps2x.Analog(PSS_RY) > 127){
+  BIN2val = (BIN2, (ps2x.Analog(PSS_RY)-128) * 2);
+
+ }
+ }     
+   delay(50);
+     
+}
+
